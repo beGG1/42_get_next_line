@@ -1,62 +1,77 @@
-#include "get_next_line.h"	
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: sshabali <sshabali@student.42berlin.de>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/12/07 23:38:29 by sshabali          #+#    #+#             */
+/*   Updated: 2024/12/07 23:38:30 by sshabali         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-static char	*read_line(int fd, char *buffer, char *str)
+#include "get_next_line_bonus.h"
+
+static char	*get_line(char **saved)
 {
-	int		read_line;
+	char	*line;
 	char	*temp;
+	size_t	i;
 
-	read_line = 1;
-	while (read_line != 0)
+	i = 0;
+	if (!*saved || !**saved)
+		return (NULL);
+	while ((*saved)[i] && (*saved)[i] != '\n')
+		i++;
+	line = ft_strdup(*saved);
+	if ((*saved)[i] == '\n')
 	{
-		read_line = read(fd, buffer, BUFFER_SIZE);
-		if (read_line == -1)
-			return (0);
-		if (read_line == 0)
-			break ;
-		buffer[read_line] = '\0';
-		if (!str)
-			str = ft_calloc(1, 1);
-		temp = str;
-		str = ft_strjoin(str, buffer);
-		free(temp);
-		if (ft_strchr(buffer, '\n') > 0)
-			break ;
+		line[i + 1] = '\0';
+		temp = ft_strdup(&(*saved)[i + 1]);
 	}
-	return (str);
+	else
+		temp = NULL;
+	free(*saved);
+	*saved = temp;
+	return (line);
 }
 
-static char	*extract(char *line)
+static int	read_to_buffer(int fd, char **saved)
 {
-	size_t	end;
-	char	*str;
+	char	*buffer;
+	int		bytes_read;
 
-	end = 0;
-	while (line[end] != '\n' && line[end] != '\0')
-		end++;
-	if (line[end] == '\0')
-		return (0);
-	str = ft_substr(line, end + 1, ft_strlen(line) - end);
-	if (!str || *str == 0)
-		return (NULL);
-	line[end + 1] = '\0';
-	return (str);
+	buffer = malloc(BUFFER_SIZE + 1);
+	if (!buffer)
+		return (-1);
+	bytes_read = read(fd, buffer, BUFFER_SIZE);
+	if (bytes_read > 0)
+	{
+		buffer[bytes_read] = '\0';
+		*saved = ft_strjoin(*saved, buffer);
+	}
+	free(buffer);
+	return (bytes_read);
 }
 
 char	*get_next_line(int fd)
 {
-	char		*line;
-	char		*buffer;
-	static char	*str[4096];
+	static char	*saved[MAX_FD];
+	int			bytes_read;
 
-	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
+	if (BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
 		return (NULL);
-	buffer = ft_calloc(1,BUFFER_SIZE + 1);
-	if (!buffer)
-		return (0);
-	line = read_line(fd, buffer, str[fd]);
-	free(buffer);
-	if (!line)
+	if (fd < 0 || read(fd, NULL, 0) < 0)
 		return (NULL);
-	str[fd] = extract(line);
-	return (line);
+	bytes_read = 1;
+	while (bytes_read > 0)
+	{
+		if (!saved[fd] || !ft_strchr(saved[fd], '\n'))
+			bytes_read = read_to_buffer(fd, &saved[fd]);
+		if (bytes_read < 0)
+			break ;
+		if (ft_strchr(saved[fd], '\n'))
+			break ;
+	}
+	return (get_line(&saved[fd]));
 }
