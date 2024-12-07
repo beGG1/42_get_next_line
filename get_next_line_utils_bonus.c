@@ -4,7 +4,7 @@ void	*ft_calloc(size_t nmemb, size_t size)
 {
 	size_t		total_size;
 	char		*ptr;
-	size_t		i;
+	int			i;
 
 	total_size = nmemb * size;
 	if (size != 0 && total_size / size != nmemb)
@@ -74,7 +74,7 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	if (!s)
 		return (NULL);
 	malloc_size = ft_malloc_size(s, start, len);
-	ptr = (char *)ft_calloc(1, malloc_size + 1);
+	ptr = (char *)malloc(sizeof(char) * (malloc_size + 1));
 	if (ptr == NULL)
 		return (NULL);
 	i = 0;

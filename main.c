@@ -17,4 +17,8 @@ int main()
     printf("%s", s);
     s = get_next_line(fd);
     printf("%s", s);
+    s = get_next_line(fd);
+    printf("%s", s);
+    s = get_next_line(fd);
+    printf("%s", s);
 }

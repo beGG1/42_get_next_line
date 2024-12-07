@@ -46,17 +46,17 @@ char	*get_next_line(int fd)
 {
 	char		*line;
 	char		*buffer;
-	static char	*str;
+	static char	*str[4096];
 
 	if (fd < 0 || BUFFER_SIZE <= 0 || read(fd, 0, 0) < 0)
 		return (NULL);
 	buffer = ft_calloc(1,BUFFER_SIZE + 1);
 	if (!buffer)
 		return (0);
-	line = read_line(fd, buffer, str);
+	line = read_line(fd, buffer, str[fd]);
 	free(buffer);
 	if (!line)
 		return (NULL);
-	str = extract(line);
+	str[fd] = extract(line);
 	return (line);
 }
