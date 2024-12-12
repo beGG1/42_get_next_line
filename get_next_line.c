@@ -12,68 +12,88 @@
 
 #include "get_next_line.h"
 
-static char	*get_line(char **saved)
+char	*ft_free(char **str)
+{
+	free(*str);
+	*str = NULL;
+	return (NULL);
+}
+
+char	*clean_saved(char *saved)
+{
+	char	*temp;
+	char	*ptr_end;
+	int		len;
+
+	ptr_end = ft_strchr(saved, '\n');
+	if (!ptr_end)
+		return (ft_free(&saved));
+	else
+		len = (ptr_end - saved) + 1;
+	if (!saved[len])
+		return (ft_free(&saved));
+	temp = ft_substr(saved, len, ft_strlen(saved) - len);
+	ft_free(&saved);
+	if (!temp)
+		return (NULL);
+	return (temp);
+}
+
+char	*new_line(char *saved)
 {
 	char	*line;
-	char	*temp;
-	size_t	i;
+	char	*ptr;
+	int		len;
 
-	i = 0;
-	if (!*saved || !**saved)
+	ptr = ft_strchr(saved, '\n');
+	len = (ptr - saved) + 1;
+	line = ft_substr(saved, 0, len);
+	if (!line)
 		return (NULL);
-	while ((*saved)[i] && (*saved)[i] != '\n')
-		i++;
-	line = ft_strdup(*saved);
-	if ((*saved)[i] == '\n')
-	{
-		line[i + 1] = '\0';
-		temp = ft_strdup(&(*saved)[i + 1]);
-	}
-	else
-		temp = NULL;
-	free(*saved);
-	*saved = temp;
 	return (line);
 }
 
-static int	read_to_buffer(int fd, char **saved)
+char	*read_to_saved(int fd, char *saved)
 {
+	int		read_bytes;
 	char	*buffer;
-	int		bytes_read;
 
+	read_bytes = 1;
 	buffer = malloc(BUFFER_SIZE + 1);
 	if (!buffer)
-		return (-1);
-	bytes_read = read(fd, buffer, BUFFER_SIZE);
-	if (bytes_read > 0)
+		return (ft_free(&saved));
+	buffer[0] = '\0';
+	while (read_bytes > 0 && !ft_strchr(buffer, '\n'))
 	{
-		buffer[bytes_read] = '\0';
-		*saved = ft_strjoin(*saved, buffer);
+		read_bytes = read(fd, buffer, BUFFER_SIZE);
+		if (read_bytes > 0)
+		{
+			buffer[read_bytes] = '\0';
+			saved = ft_strjoin(saved, buffer);
+		}
 	}
 	free(buffer);
-	return (bytes_read);
+	if (read_bytes == -1)
+		return (ft_free(&saved));
+	return (saved);
 }
 
 char	*get_next_line(int fd)
 {
 	static char	*saved;
-	int			bytes_read;
+	char		*line;
 
-	if (!saved)
-		saved = NULL;
 	if (BUFFER_SIZE <= 0 || BUFFER_SIZE > INT_MAX)
 		return (NULL);
-	if (fd < 0 || read(fd, NULL, 0) < 0)
+	if (fd < 0)
 		return (NULL);
-	bytes_read = 1;
-	while (bytes_read > 0)
-	{
-		if (!saved || !ft_strchr(saved, '\n'))
-			bytes_read = read_to_buffer(fd, &saved);
-		if (bytes_read < 0)
-			break ;
-		if (ft_strchr(saved, '\n'))
-			break ;
-	}
-	return (get_line(&saved));
+	if ((saved && !ft_strchr(saved, '\n')) || !saved)
+		saved = read_to_saved(fd, saved);
+	if (!saved)
+		return (NULL);
+	line = new_line(saved);
+	if (!line)
+		return (ft_free(&saved));
+	saved = clean_saved(saved);
+	return (line);
 }
